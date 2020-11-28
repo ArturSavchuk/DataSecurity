@@ -22,14 +22,13 @@ namespace ConsoleApp1
 
             for (int i = 0; i < input.Length; ++i)
             {
-                int oldCharIndex = Alphabet.IndexOf(char.ToLower(input[i]));
-
+                int oldCharIndex = Alphabet.IndexOf(char.ToUpper(input[i]));
+                
                 if (oldCharIndex >= 0)
                     output += char.IsUpper(input[i]) ? char.ToUpper(keyAlphabet[oldCharIndex]) : keyAlphabet[oldCharIndex];
                 else
                     output += input[i];
             }
-
             return output;
         }
 
@@ -119,13 +118,48 @@ namespace ConsoleApp1
                     string deciphered_str = DecodeSubstitution(ciphertext, str);
                     for (int i = 0; i < deciphered_str.Length - 2; i++)
                     {
-                        fit_index += trigrams[deciphered_str.Substring(i, 3)];
+                        try
+                        {
+                            string t = deciphered_str.Substring(i, 3);
+                            fit_index += trigrams[t];
+                        }
+                        catch (Exception ex)
+                        {
+
+                        }
+                        
                     }
                     indices.Add((fit_index / deciphered_str.Length - 2) - expected_index); 
                 }
                 return indices;
             }
-            
+            public static int GetIndexOfMin(List<double> fitness_indices)
+            {
+                double min = Double.MaxValue;
+                int min_index = 0;
+                for (int  i = 0; i < fitness_indices.Count; i++)
+                {
+                    if(min > fitness_indices[i])
+                    {
+                        min = fitness_indices[i];
+                        min_index = i;
+                    }
+                }
+                return min_index;
+            }
+            public static List<string> GetHighestFitnessIndivids(int n, List<string> population)
+            {
+                List<double> indices = CountPopulationFitness(population);
+                List<string> HighestFitnessIndivids = new List<string>();
+                
+                for (int i = 0; i < n; i++)
+                {
+                    int min_index = GetIndexOfMin(indices);
+                    HighestFitnessIndivids.Add(population[min_index]);
+                    indices.RemoveAt(min_index);
+                }
+                return HighestFitnessIndivids;
+            }
             
             //public static string Crossover(string key1, string key2)
             //{
@@ -143,7 +177,10 @@ namespace ConsoleApp1
         {
             string text = File.ReadAllText(@".\..\..\..\text.txt");
             GeneticAlgorithm.ParseTrigrams();
-            CountIndexForEnglishText();
+            List<string> pop =  GeneticAlgorithm.GeneratePopulation(200);
+            List<double> ind = GeneticAlgorithm.CountPopulationFitness(pop);
+            List<string> l = GeneticAlgorithm.GetHighestFitnessIndivids(10, pop);
+            
             
         }
     }
