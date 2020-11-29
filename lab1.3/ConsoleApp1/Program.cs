@@ -43,19 +43,6 @@ namespace ConsoleApp1
             }
             Console.WriteLine((fit_index / text.Length - 2));
         }
-
-        //public static void CountTerminateCond()
-        //{
-        //    string text = File.ReadAllText(@".\..\..\..\text_for_trigrams analysys.txt");
-        //    text = Regex.Replace(text, "[-.?!')(,: ]", "").ToUpper(); ;
-        //    double fit_index = 0;
-        //    for (int i = 0; i < text.Length - 2; i++)
-        //    {
-        //        fit_index += GeneticAlgorithm.trigrams[text.Substring(i, 3)];
-        //    }
-        //    Console.WriteLine((fit_index / text.Length - 2));
-        //}
-
         static class GeneticAlgorithm
         {
             public static string ciphertext = File.ReadAllText(@".\..\..\..\text.txt");
@@ -183,7 +170,7 @@ namespace ConsoleApp1
                 return HighestFitnessIndivids;
             }
 
-            //crossover 
+            //crossover function
             public static List<string> PositionBasedCrossover(List<string> HighestFitnessIndivids)
             {
                 List<string> new_individs = new List<string>();
@@ -201,6 +188,57 @@ namespace ConsoleApp1
                 HighestFitnessIndivids.AddRange(new_individs);
                 return HighestFitnessIndivids;
             }
+            
+            private static string Crossover(string item1, string item2)
+            {
+
+                Random random = new Random(Guid.NewGuid().GetHashCode());
+                List<string> items = new List<string> { item1, item2 };
+                string new_item = String.Empty;
+                for(int i = 0; i < keyLenght; i++)
+                {
+                    int r = random.Next(1);
+                    if (new_item.Contains(items[r][i]))
+                    {
+                        continue;
+                    }
+                    new_item += items[r][i];
+                }
+                int r1 = random.Next(1);
+                for(int i = 0; i < keyLenght; i++)
+                {
+                    if (new_item.Contains(items[r1][i]))
+                    {
+                        continue;
+                    }
+                    new_item += items[r1][i];
+                }
+                //int slice_point = random.Next(item1.Length - 2);
+                //for(int i = 0; i < slice_point; i++)
+                //{
+                //    new_item += item1[i];
+                //}
+                //for(int i = slice_point; i < item1.Length; i++)
+                //{
+                //    if (new_item.Contains(item2[i]))
+                //    {
+                //        continue;
+                //    }
+                //    new_item += item2[i];
+                //}
+                //for(int i = slice_point; i < item1.Length; i++)
+                //{
+                //    if (new_item.Contains(item1[i]))
+                //    {
+                //        continue;
+                //    }
+                //    new_item += item1[i];
+                //}
+                
+                return new_item;
+
+            }
+
             private static string Swap(int i1, int i2, string individ)
             {
                 StringBuilder str = new StringBuilder(individ);
@@ -209,59 +247,31 @@ namespace ConsoleApp1
                 str[i2] = t;
                 return str.ToString();
             }
-            private static string Crossover(string item1, string item2)
-            {
-                Random random = new Random(Guid.NewGuid().GetHashCode());
-                string new_item = String.Empty;
-                int slice_point = random.Next(item1.Length - 2);
-                for(int i = 0; i < slice_point; i++)
-                {
-                    new_item += item1[i];
-                }
-                for(int i = slice_point; i < item1.Length; i++)
-                {
-                    if (new_item.Contains(item2[i]))
-                    {
-                        continue;
-                    }
-                    new_item += item2[i];
-                }
-                for(int i = slice_point; i < item1.Length; i++)
-                {
-                    if (new_item.Contains(item1[i]))
-                    {
-                        continue;
-                    }
-                    new_item += item1[i];
-                }
-                
-                return new_item;
 
-            }
-
-            //mutation
+            //swap mutation function
             public static void MutatePopulation(List<string> population)
             {
-                for (int i = 0; i < population.Count; i++)
+                for (int i = 0; i < population.Count; i++)  
                 {
                     Random random = new Random(Guid.NewGuid().GetHashCode());
 
                     int rnd = random.Next(100);
-                    if (rnd % 2 == 0)
+                    if (rnd <= 30)
                     {
-                        population[i] = MakeMutation(population[i]);
+                        population[i] = MakeSwapMutation(population[i]);
                     }
                 }
             }
 
-            private static string MakeMutation(string item)
+            private static string MakeSwapMutation(string individ)
             {
                 Random random = new Random(Guid.NewGuid().GetHashCode());
-                int i1 = random.Next(item.Length);
-                int i2 = random.Next(item.Length);
-                item = Swap(i1, i2, item);
-                return item;
+                int i1 = random.Next(individ.Length);
+                int i2 = random.Next(individ.Length);
+                individ = Swap(i1, i2, individ);
+                return individ;
             }
+
 
                    
         }
