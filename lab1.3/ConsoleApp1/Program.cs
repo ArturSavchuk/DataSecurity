@@ -14,8 +14,8 @@ namespace ConsoleApp1
     {
         private static string DecodeSubstitution(string input, string keyAlphabet)
         {
-           string Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-           string output = string.Empty;
+            string Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            string output = string.Empty;
 
             if (Alphabet.Length != keyAlphabet.Length)
                 return output;
@@ -23,7 +23,7 @@ namespace ConsoleApp1
             for (int i = 0; i < input.Length; ++i)
             {
                 int oldCharIndex = Alphabet.IndexOf(char.ToUpper(input[i]));
-                
+
                 if (oldCharIndex >= 0)
                     output += char.IsUpper(input[i]) ? char.ToUpper(keyAlphabet[oldCharIndex]) : keyAlphabet[oldCharIndex];
                 else
@@ -52,9 +52,8 @@ namespace ConsoleApp1
             public static double sum = 0;
 
             //calculated using triagram analysis for article about Life on Mars
-            public static double expected_index = -3.598834764489;
-
-
+            public static double expected_index = -3.45724764489;
+                                            //difference <= 0.027
             public static List<string> GeneratePopulation(int pop_size)
             {
                 List<string> population = new List<string>();
@@ -86,7 +85,7 @@ namespace ConsoleApp1
             }
             public static void ParseTrigrams()
             {
-                Dictionary<string, double>  t_trigrams = new Dictionary<string, double>();
+                Dictionary<string, double> t_trigrams = new Dictionary<string, double>();
                 string[] tr_grams = File.ReadAllLines(@"./../../../english_trigrams.txt");
                 double sum_of_values = 0;
                 foreach (string line in tr_grams)
@@ -122,13 +121,13 @@ namespace ConsoleApp1
                         string t = deciphered_str.Substring(i, 3);
                         fit_index += trigrams[t];
                     }
-                    catch (Exception){}
+                    catch (Exception) { }
                 }
-                
+
                 fit_index /= (deciphered_str.Length - 2);
-               
+
                 fitness = Math.Abs(fit_index - expected_index);
-                
+
                 return fitness;
             }
             public static List<double> CountPopulationFitness(List<string> population)
@@ -136,7 +135,7 @@ namespace ConsoleApp1
                 List<double> indices = new List<double>();
                 foreach (string str in population)
                 {
-                    indices.Add(GetFitness(str)); 
+                    indices.Add(GetFitness(str));
                 }
                 return indices;
             }
@@ -144,9 +143,9 @@ namespace ConsoleApp1
             {
                 double min = Double.MaxValue;
                 int min_index = 0;
-                for (int  i = 0; i < fitness_indices.Count; i++)
+                for (int i = 0; i < fitness_indices.Count; i++)
                 {
-                    if(min > fitness_indices[i])
+                    if (min > fitness_indices[i])
                     {
                         min = fitness_indices[i];
                         min_index = i;
@@ -160,7 +159,7 @@ namespace ConsoleApp1
             {
                 List<double> indices = CountPopulationFitness(population);
                 List<string> HighestFitnessIndivids = new List<string>();
-                
+
                 for (int i = 0; i < n; i++)
                 {
                     int min_index = GetIndexOfMin(indices);
@@ -188,14 +187,15 @@ namespace ConsoleApp1
                 HighestFitnessIndivids.AddRange(new_individs);
                 return HighestFitnessIndivids;
             }
-            
+
+            //uniform crossover
             private static string Crossover(string item1, string item2)
             {
 
                 Random random = new Random(Guid.NewGuid().GetHashCode());
                 List<string> items = new List<string> { item1, item2 };
                 string new_item = String.Empty;
-                for(int i = 0; i < keyLenght; i++)
+                for (int i = 0; i < keyLenght; i++)
                 {
                     int r = random.Next(1);
                     if (new_item.Contains(items[r][i]))
@@ -205,7 +205,7 @@ namespace ConsoleApp1
                     new_item += items[r][i];
                 }
                 int r1 = random.Next(1);
-                for(int i = 0; i < keyLenght; i++)
+                for (int i = 0; i < keyLenght; i++)
                 {
                     if (new_item.Contains(items[r1][i]))
                     {
@@ -213,11 +213,10 @@ namespace ConsoleApp1
                     }
                     new_item += items[r1][i];
                 }
-                
+
                 return new_item;
 
             }
-
             private static string Swap(int i1, int i2, string individ)
             {
                 StringBuilder str = new StringBuilder(individ);
@@ -230,12 +229,12 @@ namespace ConsoleApp1
             //swap mutation function
             public static void MutatePopulation(List<string> population)
             {
-                for (int i = 0; i < population.Count; i++)  
+                for (int i = 0; i < population.Count; i++)
                 {
                     Random random = new Random(Guid.NewGuid().GetHashCode());
 
                     int rnd = random.Next(100);
-                    if (rnd <= 30)
+                    if (rnd <= 40)
                     {
                         population[i] = MakeSwapMutation(population[i]);
                     }
@@ -251,33 +250,32 @@ namespace ConsoleApp1
                 return individ;
             }
 
-            public static string Decrypt(string text)
+            public static string Decrypt()
             {
                 ParseTrigrams();
-                List<string> pop = GeneratePopulation(500);
+                List<string> pop = GeneratePopulation(50);
                 List<double> ind = CountPopulationFitness(pop);
                 string highest_individ = GetHighestFitnessIndivids(1, pop)[0];
-
-                while (true) 
+                double highestfit = GetFitness(highest_individ);
+                while (!(highestfit <= 0.027353))
                 {
-                    List<string> best = GetHighestFitnessIndivids(250, pop);
+                    List<string> best = GetHighestFitnessIndivids(30, pop);
                     List<string> children = PositionBasedCrossover(best);
                     GeneticAlgorithm.MutatePopulation(children);
                     pop = children;
                     highest_individ = GetHighestFitnessIndivids(1, pop)[0];
-                    Console.WriteLine(GetFitness(highest_individ));
-                    Console.WriteLine(DecodeSubstitution(text, highest_individ));
+                    highestfit = GetFitness(highest_individ);
+                    Console.WriteLine("Fitness value " + highestfit);
+                    Console.WriteLine("Deciphered text: ");
+                    Console.WriteLine(DecodeSubstitution(ciphertext, highest_individ));
                 }
+                return DecodeSubstitution(ciphertext, highest_individ);
             }
-                   
+
         }
-
-
         static void Main()
         {
-            string text = File.ReadAllText(@".\..\..\..\text.txt");
-            GeneticAlgorithm.Decrypt(text);
-                 
+            File.WriteAllText(@".\..\..\..\deciphered_message.txt", GeneticAlgorithm.Decrypt());
         }
     }
 }
