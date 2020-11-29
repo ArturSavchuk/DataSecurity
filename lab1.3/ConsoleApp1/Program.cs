@@ -32,9 +32,9 @@ namespace ConsoleApp1
             return output;
         }
 
-        public static void CountIndexForEnglishText()
+        public static void CountIndexForEnglishText(string text)
         {
-            string text = File.ReadAllText(@".\..\..\..\text_for_trigrams analysys.txt");
+            //string text = File.ReadAllText(@".\..\..\..\text_for_trigrams analysys.txt");
             text = Regex.Replace(text, "[-.?!')(,: ]", "").ToUpper(); ;
             double fit_index = 0;
             for (int i = 0; i < text.Length - 2; i++)
@@ -43,6 +43,18 @@ namespace ConsoleApp1
             }
             Console.WriteLine((fit_index / text.Length - 2));
         }
+
+        //public static void CountTerminateCond()
+        //{
+        //    string text = File.ReadAllText(@".\..\..\..\text_for_trigrams analysys.txt");
+        //    text = Regex.Replace(text, "[-.?!')(,: ]", "").ToUpper(); ;
+        //    double fit_index = 0;
+        //    for (int i = 0; i < text.Length - 2; i++)
+        //    {
+        //        fit_index += GeneticAlgorithm.trigrams[text.Substring(i, 3)];
+        //    }
+        //    Console.WriteLine((fit_index / text.Length - 2));
+        //}
 
         static class GeneticAlgorithm
         {
@@ -53,7 +65,7 @@ namespace ConsoleApp1
             public static double sum = 0;
 
             //calculated using triagram analysis for article about Life on Mars
-            public static double expected_index = -5.24796834764489;
+            public static double expected_index = -3.556834764489;
 
 
             public static List<string> GeneratePopulation(int pop_size)
@@ -109,27 +121,35 @@ namespace ConsoleApp1
 
             }
 
+            //fitness function
+
+            public static double GetFitness(string individ)
+            {
+                double fitness;
+                double fit_index = 0;
+                string deciphered_str = DecodeSubstitution(ciphertext, individ);
+                for (int i = 0; i < deciphered_str.Length - 2; i++)
+                {
+                    try
+                    {
+                        string t = deciphered_str.Substring(i, 3);
+                        fit_index += trigrams[t];
+                    }
+                    catch (Exception){}
+                }
+                
+                fit_index /= (deciphered_str.Length - 2);
+               
+                fitness = Math.Abs(fit_index - expected_index);
+                
+                return fitness;
+            }
             public static List<double> CountPopulationFitness(List<string> population)
             {
                 List<double> indices = new List<double>();
                 foreach (string str in population)
                 {
-                    double fit_index = 0;
-                    string deciphered_str = DecodeSubstitution(ciphertext, str);
-                    for (int i = 0; i < deciphered_str.Length - 2; i++)
-                    {
-                        try
-                        {
-                            string t = deciphered_str.Substring(i, 3);
-                            fit_index += trigrams[t];
-                        }
-                        catch (Exception ex)
-                        {
-
-                        }
-                        
-                    }
-                    indices.Add((fit_index / deciphered_str.Length - 2) - expected_index); 
+                    indices.Add(GetFitness(str)); 
                 }
                 return indices;
             }
@@ -147,6 +167,8 @@ namespace ConsoleApp1
                 }
                 return min_index;
             }
+
+            //selection function
             public static List<string> GetHighestFitnessIndivids(int n, List<string> population)
             {
                 List<double> indices = CountPopulationFitness(population);
@@ -160,16 +182,88 @@ namespace ConsoleApp1
                 }
                 return HighestFitnessIndivids;
             }
-            
-            //public static string Crossover(string key1, string key2)
-            //{
 
-            //}
+            //crossover 
+            public static List<string> PositionBasedCrossover(List<string> HighestFitnessIndivids)
+            {
+                List<string> new_individs = new List<string>();
+                for (int i = 0; i < HighestFitnessIndivids.Count * 2; i++)
+                {
+                    Random random = new Random(Guid.NewGuid().GetHashCode());
 
-            //public static string MakeMutation(string key)
-            //{
+                    int i1 = random.Next(HighestFitnessIndivids.Count);
+                    int i2 = random.Next(HighestFitnessIndivids.Count);
 
-            //}
+                    while (i1 == i2) i2 = random.Next(HighestFitnessIndivids.Count);
+                    string child = Crossover(HighestFitnessIndivids[i1], HighestFitnessIndivids[i2]);
+                    new_individs.Add(child);
+                }
+                HighestFitnessIndivids.AddRange(new_individs);
+                return HighestFitnessIndivids;
+            }
+            private static string Swap(int i1, int i2, string individ)
+            {
+                StringBuilder str = new StringBuilder(individ);
+                char t = str[i1];
+                str[i1] = str[i2];
+                str[i2] = t;
+                return str.ToString();
+            }
+            private static string Crossover(string item1, string item2)
+            {
+                Random random = new Random(Guid.NewGuid().GetHashCode());
+                string new_item = String.Empty;
+                int slice_point = random.Next(item1.Length - 2);
+                for(int i = 0; i < slice_point; i++)
+                {
+                    new_item += item1[i];
+                }
+                for(int i = slice_point; i < item1.Length; i++)
+                {
+                    if (new_item.Contains(item2[i]))
+                    {
+                        continue;
+                    }
+                    new_item += item2[i];
+                }
+                for(int i = slice_point; i < item1.Length; i++)
+                {
+                    if (new_item.Contains(item1[i]))
+                    {
+                        continue;
+                    }
+                    new_item += item1[i];
+                }
+                
+                return new_item;
+
+            }
+
+            //mutation
+            public static void MutatePopulation(List<string> population)
+            {
+                for (int i = 0; i < population.Count; i++)
+                {
+                    Random random = new Random(Guid.NewGuid().GetHashCode());
+
+                    int rnd = random.Next(100);
+                    if (rnd % 2 == 0)
+                    {
+                        population[i] = MakeMutation(population[i]);
+                    }
+                }
+            }
+
+            private static string MakeMutation(string item)
+            {
+                Random random = new Random(Guid.NewGuid().GetHashCode());
+                int i1 = random.Next(item.Length);
+                int i2 = random.Next(item.Length);
+                item = Swap(i1, i2, item);
+                return item;
+            }
+
+                   
         }
 
 
@@ -177,11 +271,20 @@ namespace ConsoleApp1
         {
             string text = File.ReadAllText(@".\..\..\..\text.txt");
             GeneticAlgorithm.ParseTrigrams();
-            List<string> pop =  GeneticAlgorithm.GeneratePopulation(200);
+            List<string> pop =  GeneticAlgorithm.GeneratePopulation(500);
             List<double> ind = GeneticAlgorithm.CountPopulationFitness(pop);
-            List<string> l = GeneticAlgorithm.GetHighestFitnessIndivids(10, pop);
-            
-            
+            string l = GeneticAlgorithm.GetHighestFitnessIndivids(1, pop)[0];
+           
+            while(true)
+            {
+                List<string> best = GeneticAlgorithm.GetHighestFitnessIndivids(250, pop);
+                List<string> children = GeneticAlgorithm.PositionBasedCrossover(best);
+                GeneticAlgorithm.MutatePopulation(children);
+                pop = children;
+                l = GeneticAlgorithm.GetHighestFitnessIndivids(1, pop)[0];
+                Console.WriteLine(GeneticAlgorithm.GetFitness(l));
+                Console.WriteLine(DecodeSubstitution(text, l));
+            }            
         }
     }
 }
