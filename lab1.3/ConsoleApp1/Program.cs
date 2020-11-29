@@ -32,9 +32,9 @@ namespace ConsoleApp1
             return output;
         }
 
-        public static void CountIndexForEnglishText(string text)
+        public static void CountIndexForEnglishText()
         {
-            //string text = File.ReadAllText(@".\..\..\..\text_for_trigrams analysys.txt");
+            string text = File.ReadAllText(@".\..\..\..\text_for_trigrams analysys.txt");
             text = Regex.Replace(text, "[-.?!')(,: ]", "").ToUpper(); ;
             double fit_index = 0;
             for (int i = 0; i < text.Length - 2; i++)
@@ -52,7 +52,7 @@ namespace ConsoleApp1
             public static double sum = 0;
 
             //calculated using triagram analysis for article about Life on Mars
-            public static double expected_index = -3.556834764489;
+            public static double expected_index = -3.598834764489;
 
 
             public static List<string> GeneratePopulation(int pop_size)
@@ -213,27 +213,6 @@ namespace ConsoleApp1
                     }
                     new_item += items[r1][i];
                 }
-                //int slice_point = random.Next(item1.Length - 2);
-                //for(int i = 0; i < slice_point; i++)
-                //{
-                //    new_item += item1[i];
-                //}
-                //for(int i = slice_point; i < item1.Length; i++)
-                //{
-                //    if (new_item.Contains(item2[i]))
-                //    {
-                //        continue;
-                //    }
-                //    new_item += item2[i];
-                //}
-                //for(int i = slice_point; i < item1.Length; i++)
-                //{
-                //    if (new_item.Contains(item1[i]))
-                //    {
-                //        continue;
-                //    }
-                //    new_item += item1[i];
-                //}
                 
                 return new_item;
 
@@ -272,7 +251,24 @@ namespace ConsoleApp1
                 return individ;
             }
 
+            public static string Decrypt(string text)
+            {
+                ParseTrigrams();
+                List<string> pop = GeneratePopulation(500);
+                List<double> ind = CountPopulationFitness(pop);
+                string highest_individ = GetHighestFitnessIndivids(1, pop)[0];
 
+                while (true) 
+                {
+                    List<string> best = GetHighestFitnessIndivids(250, pop);
+                    List<string> children = PositionBasedCrossover(best);
+                    GeneticAlgorithm.MutatePopulation(children);
+                    pop = children;
+                    highest_individ = GetHighestFitnessIndivids(1, pop)[0];
+                    Console.WriteLine(GetFitness(highest_individ));
+                    Console.WriteLine(DecodeSubstitution(text, highest_individ));
+                }
+            }
                    
         }
 
@@ -280,21 +276,8 @@ namespace ConsoleApp1
         static void Main()
         {
             string text = File.ReadAllText(@".\..\..\..\text.txt");
-            GeneticAlgorithm.ParseTrigrams();
-            List<string> pop =  GeneticAlgorithm.GeneratePopulation(500);
-            List<double> ind = GeneticAlgorithm.CountPopulationFitness(pop);
-            string l = GeneticAlgorithm.GetHighestFitnessIndivids(1, pop)[0];
-           
-            while(true)
-            {
-                List<string> best = GeneticAlgorithm.GetHighestFitnessIndivids(250, pop);
-                List<string> children = GeneticAlgorithm.PositionBasedCrossover(best);
-                GeneticAlgorithm.MutatePopulation(children);
-                pop = children;
-                l = GeneticAlgorithm.GetHighestFitnessIndivids(1, pop)[0];
-                Console.WriteLine(GeneticAlgorithm.GetFitness(l));
-                Console.WriteLine(DecodeSubstitution(text, l));
-            }            
+            GeneticAlgorithm.Decrypt(text);
+                 
         }
     }
 }
