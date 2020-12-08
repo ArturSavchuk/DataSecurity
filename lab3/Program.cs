@@ -65,10 +65,9 @@ namespace lab3
                     string line = "";
                     while ((line = reader.ReadLine()) != null)
                     {
-                        dynamic test = JObject.Parse(line);
-                        money = test.account.money;
-                        
-                        Console.WriteLine(money);
+                        dynamic json = JObject.Parse(line);
+                        money = json.account.money;
+                        Console.WriteLine(json);
                     }
                 }
             } 
@@ -142,13 +141,7 @@ namespace lab3
             crack_multiplier(states, modulus);
             crack_increment(states, modulus, multiplier);
         }
-
-        public void Show()
-        {
-            Console.WriteLine(multiplier);
-            Console.WriteLine(increment);
-            Console.WriteLine(modulus);
-        }
+   
         public long genNext()
         {
 
@@ -172,8 +165,8 @@ namespace lab3
         {
             
             PRNG_LCG pRNG_LCG = new PRNG_LCG();
-            CasinoPlayer casinoPlayer = new CasinoPlayer(1488);
-            //casinoPlayer.CreateAcc();
+            CasinoPlayer casinoPlayer = new CasinoPlayer(12345);
+            casinoPlayer.CreateAcc();
 
             pRNG_LCG.init(casinoPlayer.Get3RealNumbers());
             while (!casinoPlayer.MakeTestBet(pRNG_LCG.genNext()))
@@ -181,6 +174,7 @@ namespace lab3
                 pRNG_LCG.init(casinoPlayer.Get3RealNumbers());
             }
 
+              
             int money = 0;
             while(money <= 10000000)
             {
