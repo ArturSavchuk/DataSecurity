@@ -75,14 +75,33 @@ namespace lab3
             response.Close();
             return money;
         }
+        public bool MakeTestBet(long realmumber)
+        {
+            string message = string.Empty;
+            WebRequest webRequest = WebRequest.Create(String.Format("http://95.217.177.249/casino/playLcg?id={0}&bet=1&number={1}", this.id, realmumber));
+            WebResponse response = webRequest.GetResponse();
+            using (Stream stream = response.GetResponseStream())
+            {
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    string line = "";
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        dynamic json = JObject.Parse(line);
+                        message = json.message;
+                    }
+                }
+            }
+            response.Close();
+            return message != "You lost this time";
+        }
+
     }
     public class PRNG_LCG
     {
         private long multiplier;//= 1664525;
         private long increment;// = 1013904223;
         private long modulus;
-
-        //states for calculating multiplier and increment
 
         private long seed;
 
@@ -110,12 +129,13 @@ namespace lab3
                 difference += modulus;
             }
             multiplier = ((difference * modinv((states[1] - states[0]), modulus)) % modulus);
-
         }
+
         public void crack_increment(long[] states, long modulus, long multiplier)
         {
             increment = (modulus - ((states[0] * multiplier) % modulus) + states[1]) % modulus;
         }
+
         public void init(long[] states)
         {
             seed = states[states.Length - 1];
@@ -152,20 +172,20 @@ namespace lab3
         {
             
             PRNG_LCG pRNG_LCG = new PRNG_LCG();
-            CasinoPlayer casinoPlayer = new CasinoPlayer(1113);
+            CasinoPlayer casinoPlayer = new CasinoPlayer(1488);
             //casinoPlayer.CreateAcc();
+
             pRNG_LCG.init(casinoPlayer.Get3RealNumbers());
-            casinoPlayer.MakeLuckyBet(pRNG_LCG.genNext());
-            casinoPlayer.MakeLuckyBet(pRNG_LCG.genNext());
-            casinoPlayer.MakeLuckyBet(pRNG_LCG.genNext());
-            casinoPlayer.MakeLuckyBet(pRNG_LCG.genNext());
-            casinoPlayer.MakeLuckyBet(pRNG_LCG.genNext());
-            casinoPlayer.MakeLuckyBet(pRNG_LCG.genNext());
-            casinoPlayer.MakeLuckyBet(pRNG_LCG.genNext());
+            while (!casinoPlayer.MakeTestBet(pRNG_LCG.genNext()))
+            {
+                pRNG_LCG.init(casinoPlayer.Get3RealNumbers());
+            }
 
-
-
-
+            int money = 0;
+            while(money <= 10000000)
+            {
+                money = casinoPlayer.MakeLuckyBet(pRNG_LCG.genNext());
+            }
         }
     }
 }
