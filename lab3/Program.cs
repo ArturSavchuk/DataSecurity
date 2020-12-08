@@ -22,7 +22,7 @@ namespace lab3
                 {
                     string line = "";
                     while ((line = reader.ReadLine()) != null)
-                    { 
+                    {
                         Console.WriteLine(line);
                     }
                 }
@@ -52,26 +52,42 @@ namespace lab3
                 response.Close();
             }
             return states;
-        }  
-        public void MakeLuckyBet(long realmumber)
-        {
-
         }
-        
+        public int MakeLuckyBet(long realmumber)
+        {
+            int money = 0;
+            WebRequest webRequest = WebRequest.Create(String.Format("http://95.217.177.249/casino/playLcg?id={0}&bet=500&number={1}", this.id, realmumber));
+            WebResponse response = webRequest.GetResponse();
+            using (Stream stream = response.GetResponseStream())
+            {
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    string line = "";
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        dynamic test = JObject.Parse(line);
+                        money = test.account.money;
+                        
+                        Console.WriteLine(money);
+                    }
+                }
+            } 
+            response.Close();
+            return money;
+        }
     }
-
     public class PRNG_LCG
     {
-        private long multiplier;
-        private long increment;
+        private long multiplier;//= 1664525;
+        private long increment;// = 1013904223;
         private long modulus;
 
         //states for calculating multiplier and increment
 
         private long seed;
 
-        public PRNG_LCG() { modulus = 4294967296;}
-       
+        public PRNG_LCG() { modulus = 4294967296; }
+
         public long modinv(long a, long modulus)
         {
             if (modulus == 1) return 0;
@@ -93,7 +109,7 @@ namespace lab3
             {
                 difference += modulus;
             }
-            multiplier = (difference * modinv((states[1] - states[0]), modulus)) % modulus;
+            multiplier = ((difference * modinv((states[1] - states[0]), modulus)) % modulus);
 
         }
         public void crack_increment(long[] states, long modulus, long multiplier)
@@ -106,11 +122,27 @@ namespace lab3
             crack_multiplier(states, modulus);
             crack_increment(states, modulus, multiplier);
         }
+
+        public void Show()
+        {
+            Console.WriteLine(multiplier);
+            Console.WriteLine(increment);
+            Console.WriteLine(modulus);
+        }
         public long genNext()
         {
-           
-            seed =  ((multiplier * seed + increment) % modulus);
-            return seed;
+
+            long new_seed = ((multiplier * seed + increment) % modulus);
+            if (new_seed > 2144000000)
+            {
+                new_seed = (long)Math.IEEERemainder((multiplier * seed + increment), -modulus);
+            }
+            else if(new_seed < -2144000000)
+            {
+                new_seed = (long)Math.IEEERemainder((multiplier * seed + increment), modulus);
+            }
+            seed = new_seed;
+            return new_seed;
         }
     }
     static class Program
@@ -118,14 +150,22 @@ namespace lab3
 
         static void Main(string[] args)
         {
-            //    //modulus = 2^32 = 4294967296
-            long[] states = { 3848296624, 4007236687, 2320102754 };
-
-            PRNG_LCG pRNG_LCG = new PRNG_LCG();
-            pRNG_LCG.init(states);
-            Console.WriteLine(pRNG_LCG.genNext());
             
+            PRNG_LCG pRNG_LCG = new PRNG_LCG();
+            CasinoPlayer casinoPlayer = new CasinoPlayer(1113);
+            //casinoPlayer.CreateAcc();
+            pRNG_LCG.init(casinoPlayer.Get3RealNumbers());
+            casinoPlayer.MakeLuckyBet(pRNG_LCG.genNext());
+            casinoPlayer.MakeLuckyBet(pRNG_LCG.genNext());
+            casinoPlayer.MakeLuckyBet(pRNG_LCG.genNext());
+            casinoPlayer.MakeLuckyBet(pRNG_LCG.genNext());
+            casinoPlayer.MakeLuckyBet(pRNG_LCG.genNext());
+            casinoPlayer.MakeLuckyBet(pRNG_LCG.genNext());
+            casinoPlayer.MakeLuckyBet(pRNG_LCG.genNext());
+
+
+
+
         }
     }
 }
-
