@@ -29,6 +29,11 @@ namespace lab3
             }
             response.Close();
         }
+
+        public int GetId()
+        {
+            return this.id;
+        }
         public long[] Get3RealNumbers()
         {
             long[] states = new long[3];
@@ -75,6 +80,27 @@ namespace lab3
             return money;
         }
 
+        public int MakeLuckyMTBet(long realNumber)
+        {
+            int money = 0;
+            WebRequest webRequest = WebRequest.Create(String.Format("http://95.217.177.249/casino/playMt?id={0}&bet=500&number={1}", this.id, realNumber));
+            WebResponse response = webRequest.GetResponse();
+            using (Stream stream = response.GetResponseStream())
+            {
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    string line = "";
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        dynamic json = JObject.Parse(line);
+                        money = json.account.money;
+                        Console.WriteLine(json);
+                    }
+                }
+            }
+            response.Close();
+            return money;
+        }
 
         public bool MakeTestBet(long realmumber)
         {
@@ -117,7 +143,6 @@ namespace lab3
                     }
                 }
                 response.Close();
-            Console.WriteLine(realNum + "REALNUMBER");
             return realNum;
         }
     }
@@ -307,27 +332,9 @@ static class Program
         {
             
             PRNG_LCG pRNG_LCG = new PRNG_LCG();
-            CasinoPlayer casinoPlayer = new CasinoPlayer(1111);
-            //casinoPlayer.CreateAcc();
+            CasinoPlayer casinoPlayer = new CasinoPlayer(7920);
+            casinoPlayer.CreateAcc();
             long seed = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            MersenneTwister mersenneTwister = new MersenneTwister(54321);
-            Console.WriteLine(mersenneTwister.BRandom());
-            Console.WriteLine(mersenneTwister.BRandom());
-            
-
-            //int counter = 0;
-            //long nextNum = 0;
-            //do
-            //{
-            //    seed += counter;
-            //    mT19937 = new MT19937();
-            //    mT19937.init_genrand((ulong)seed);
-            //    counter++;
-            //    nextNum = (long)mT19937.genrand_int32();
-            //} 
-            //while (casinoPlayer.GetRealNumber() != nextNum);
-
-
 
             //pRNG_LCG.init(casinoPlayer.Get3RealNumbers());
             //while (!casinoPlayer.MakeTestBet(pRNG_LCG.genNext()))
@@ -335,12 +342,37 @@ static class Program
             //    pRNG_LCG.init(casinoPlayer.Get3RealNumbers());
             //}
 
-
             //int money = 0;
             //while(money <= 10000000)
             //{
             //    money = casinoPlayer.MakeLuckyBet(pRNG_LCG.genNext());
             //}
+
+            MersenneTwister mersenneTwister = new MersenneTwister((uint)seed);
+            long nextNum = (long)mersenneTwister.BRandom();
+            do
+            {
+
+                    int id = casinoPlayer.GetId();
+                    id++;
+                    casinoPlayer = new CasinoPlayer(id);
+                    casinoPlayer.CreateAcc();
+                    seed = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                    mersenneTwister = new MersenneTwister((uint)seed);
+                    nextNum = (long)mersenneTwister.BRandom();
+
+            }
+            while (casinoPlayer.GetRealNumber() != nextNum);
+
+            //easy money
+
+            int money = 0;
+            while(money <= 1000000)
+            {
+                money = casinoPlayer.MakeLuckyMTBet(mersenneTwister.BRandom());
+            }
+
+
         }
     }
 }
