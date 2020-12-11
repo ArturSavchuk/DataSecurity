@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 
 namespace lab4
@@ -49,19 +50,56 @@ namespace lab4
             {
                 passwords.Add(this.GenRandomPassword(random.Next(1, 20)));
             }
+            for(int i = 0; i < rest; i++)
+            {
+                passwords.Add(this.GenHumanLikePassword());
+            }
 
             return passwords;
 
         }
 
-        private string ChangeRegister(string pwd)
+        
+        public string GenHumanLikePassword()
+        {
+            string numbers = "1234567890";
+            string password = String.Empty;
+            Random random = new Random(Guid.NewGuid().GetHashCode());
+
+            //combine 2 most common words
+            password = most_common_words[random.Next(0, most_common_words.Length)] + most_common_words[random.Next(0, most_common_words.Length)];
+
+            //add 5 numbers to password
+            for(int i = 0; i < 5; i++)
+            {
+                password = password.Insert(random.Next(0, password.Length), numbers[random.Next(0, numbers.Length)].ToString());
+            }
+            //replace numbers 
+            password = ReplaceNumbers(password);
+
+            //add rand.next(0,10) numbers to the end 
+
+            for(int i = 0; i < random.Next(0, 10); i++)
+            {
+                password += numbers[random.Next(0, numbers.Length)];
+            }
+
+            //change register 
+            password = ChangeCase(password);
+
+
+            return password;
+            
+
+        }
+        private string ChangeCase(string pwd)
         {
             string new_pwd = String.Empty;
-            for(int i = 0; i < pwd.Length; i++)
+            for (int i = 0; i < pwd.Length; i++)
             {
                 if (Char.IsUpper(pwd[i]))
                 {
-                   new_pwd += pwd.Replace(pwd[i], Char.ToLower(pwd[i]));
+                    new_pwd += pwd.Replace(pwd[i], Char.ToLower(pwd[i]));
                 }
                 if (Char.IsLower(pwd[i]))
                 {
@@ -99,56 +137,55 @@ namespace lab4
                 str = str.Replace(pair.Key, (char)pair.Value);
             return str;
         }
-        public string GenHumanLikePassword()
-        {
-            string numbers = "1234567890";
-            string password = String.Empty;
-            Random random = new Random(Guid.NewGuid().GetHashCode());
-
-            //combine 2 most common words
-            password = most_common_words[random.Next(0, most_common_words.Length)] + most_common_words[random.Next(0, most_common_words.Length)];
-
-            //add 5 numbers to password
-            for(int i = 0; i < 5; i++)
-            {
-                password = password.Insert(random.Next(0, password.Length), numbers[random.Next(0, numbers.Length)].ToString());
-            }
-            //replace numbers 
-            password = ReplaceNumbers(password);
-
-            //add rand.next(0,10) numbers to the end 
-
-            for(int i = 0; i < random.Next(0, 10); i++)
-            {
-                password += numbers[random.Next(0, numbers.Length)];
-            }
 
 
-            //change register 
-            password = ChangeRegister(password);
-
-
-            return password;
-            
-
-        }
-           
     }
 
+    class Md5
+    {
+        string path = @"..\..\MD5Hashes.csv";
+        public void HashAndRecordPasswords(List<string> passwords)
+        {
 
+            for (int i = 0; i < passwords.Count; i++)
+            {
+                string pwdplusnonce = String.Empty;
+                byte[] nonce = CreateNonce();
+                MD5CryptoServiceProvider mD5CryptoServiceProvider = new MD5CryptoServiceProvider();
+                byte[] input_bytes = Encoding.ASCII.GetBytes(passwords[i]);
+                byte[] hashed_nonce = mD5CryptoServiceProvider.ComputeHash(nonce);
+                byte[] hashed_password = mD5CryptoServiceProvider.ComputeHash(nonce.ToList().Concat(input_bytes).ToArray());
+
+                pwdplusnonce = Convert.ToBase64String(hashed_password) + "|" + Convert.ToBase64String(nonce) + Environment.NewLine;
+                RecordHash(pwdplusnonce);
+            }
+        }
+
+        public void RecordHash(string pwdplusnonce)
+        {
+            File.AppendAllText(path, pwdplusnonce);
+
+        }
+        protected byte[] CreateNonce()
+        {
+            var buffer = new byte[16];
+            RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
+            rng.GetBytes(buffer);
+            return buffer;
+        }
+
+    }
 
 
     class Program
     {
         static void Main(string[] args)
         {
-            PasswordGenerator passwordGenerator = new PasswordGenerator(10, 50, 10);
+            PasswordGenerator passwordGenerator = new PasswordGenerator(10, 70, 5);
             List<string> l = passwordGenerator.GeneratePasswords(100);
+            Md5 md5 = new Md5();
+            md5.HashAndRecordPasswords(l);
 
-            for(int i = 0; i < 20; i++)
-            {
-                Console.WriteLine(passwordGenerator.GenHumanLikePassword());
-            }
             
             
         }
