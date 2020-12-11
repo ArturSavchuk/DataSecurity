@@ -540,6 +540,23 @@ namespace lab3
             //}
 
 
+
+            ulong[] states = new ulong[624];
+            ulong[] statesBT = new ulong[624];
+            BtMersenneTwister mersenneTwister = new BtMersenneTwister();
+            for (int i = 0; i < 624; i++)
+            {
+                ulong t = (ulong)casinoPlayer.GetRealNumberBetterMt();
+                states[i] = mersenneTwister.untempering(t);
+            }
+            mersenneTwister.RandomInit(states);
+
+            int money = 0;
+            while (money <= 1000000)
+            {
+                money = casinoPlayer.MakeLuckyBetterMtBet((long)mersenneTwister.BRandom());
+            }
+
         }
     }
 }
