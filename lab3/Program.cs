@@ -37,7 +37,8 @@ namespace lab3
         public long[] Get3RealNumbers()
         {
             long[] states = new long[3];
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 3; i++)
+            {
                 WebRequest webRequest = WebRequest.Create(String.Format("http://95.217.177.249/casino/playLcg?id={0}&bet=1&number=1", id));
                 WebResponse response = webRequest.GetResponse();
 
@@ -58,7 +59,10 @@ namespace lab3
             }
             return states;
         }
-        public int MakeLuckyBet(long realmumber)
+
+
+
+        public int MakeLuckyLCGBet(long realmumber)
         {
             int money = 0;
             WebRequest webRequest = WebRequest.Create(String.Format("http://95.217.177.249/casino/playLcg?id={0}&bet=500&number={1}", this.id, realmumber));
@@ -75,11 +79,10 @@ namespace lab3
                         Console.WriteLine(json);
                     }
                 }
-            } 
+            }
             response.Close();
             return money;
         }
-
         public int MakeLuckyMTBet(long realNumber)
         {
             int money = 0;
@@ -101,7 +104,27 @@ namespace lab3
             response.Close();
             return money;
         }
-
+        public int MakeLuckyBetterMtBet(long realNumber)
+        {
+            int money = 0;
+            WebRequest webRequest = WebRequest.Create(String.Format("http://95.217.177.249/casino/playBetterMt?id={0}&bet=300&number={1}", this.id, realNumber));
+            WebResponse response = webRequest.GetResponse();
+            using (Stream stream = response.GetResponseStream())
+            {
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    string line = "";
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        dynamic json = JObject.Parse(line);
+                        money = json.account.money;
+                        Console.WriteLine(json);
+                    }
+                }
+            }
+            response.Close();
+            return money;
+        }
         public bool MakeTestBet(long realmumber)
         {
             string message = string.Empty;
@@ -123,26 +146,50 @@ namespace lab3
             return message != "You lost this time";
         }
 
-        public long GetRealNumber()
+
+
+        public long GetRealNumberMt()
         {
             long realNum = 0;
-                WebRequest webRequest = WebRequest.Create(String.Format("http://95.217.177.249/casino/playMt?id={0}&bet=1&number=1", id));
-                WebResponse response = webRequest.GetResponse();
+            WebRequest webRequest = WebRequest.Create(String.Format("http://95.217.177.249/casino/playMt?id={0}&bet=1&number=1", id));
+            WebResponse response = webRequest.GetResponse();
 
-                using (Stream stream = response.GetResponseStream())
+            using (Stream stream = response.GetResponseStream())
+            {
+                using (StreamReader reader = new StreamReader(stream))
                 {
-                    using (StreamReader reader = new StreamReader(stream))
+                    string line = "";
+                    while ((line = reader.ReadLine()) != null)
                     {
-                        string line = "";
-                        while ((line = reader.ReadLine()) != null)
-                        {
-                            dynamic test = JObject.Parse(line);
-                            Console.WriteLine(test);
-                            realNum = (long)test.realNumber;
-                        }
+                        dynamic test = JObject.Parse(line);
+                        Console.WriteLine(test);
+                        realNum = (long)test.realNumber;
                     }
                 }
-                response.Close();
+            }
+            response.Close();
+            return realNum;
+        }
+        public long GetRealNumberBetterMt()
+        {
+            long realNum = 0;
+            WebRequest webRequest = WebRequest.Create(String.Format("http://95.217.177.249/casino/playBetterMt?id={0}&bet=1&number=1", id));
+            WebResponse response = webRequest.GetResponse();
+
+            using (Stream stream = response.GetResponseStream())
+            {
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    string line = "";
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        dynamic test = JObject.Parse(line);
+                        Console.WriteLine(test);
+                        realNum = (long)test.realNumber;
+                    }
+                }
+            }
+            response.Close();
             return realNum;
         }
     }
@@ -191,7 +238,7 @@ namespace lab3
             crack_multiplier(states, modulus);
             crack_increment(states, modulus, multiplier);
         }
-   
+
         public long genNext()
         {
 
@@ -200,7 +247,7 @@ namespace lab3
             {
                 new_seed = (long)Math.IEEERemainder((multiplier * seed + increment), -modulus);
             }
-            else if(new_seed < -2144000000)
+            else if (new_seed < -2144000000)
             {
                 new_seed = (long)Math.IEEERemainder((multiplier * seed + increment), modulus);
             }
@@ -210,129 +257,248 @@ namespace lab3
     }
 
     public class MersenneTwister
-	{
-		const int MERS_N = 624;
-		const int MERS_M = 397;
-		const int MERS_U = 11;
-		const int MERS_S = 7;
-		const int MERS_T = 15;
-		const int MERS_L = 18;
-		const uint MERS_A = 0x9908B0DF;
-		const uint MERS_B = 0x9D2C5680;
-		const uint MERS_C = 0xEFC60000;
+    {
+        const int MERS_N = 624;
+        const int MERS_M = 397;
+        const int MERS_U = 11;
+        const int MERS_S = 7;
+        const int MERS_T = 15;
+        const int MERS_L = 18;
+        const uint MERS_A = 0x9908B0DF;
+        const uint MERS_B = 0x9D2C5680;
+        const uint MERS_C = 0xEFC60000;
 
-		uint[] mt = new uint[MERS_N];		   // state vector
-		uint mti;							 // index into mt
+        uint[] mt = new uint[MERS_N];          // state vector
+        uint mti;                            // index into mt
 
-		private MersenneTwister() { }
-		public MersenneTwister(uint seed)
-		{		// constructor
-			RandomInit(seed);
-		}
-		public void RandomInit(uint seed)
-		{
-			mt[0] = seed;
-			for (mti = 1; mti < MERS_N; mti++)
-				mt[mti] = (1812433253U * (mt[mti - 1] ^ (mt[mti - 1] >> 30)) + mti);
-		}
-		public void RandomInitByArray(uint[] seeds)
-		{
-			// seed by more than 32 bits
-			uint i, j;
-			int k;
-			int length = seeds.Length;
-			RandomInit(19650218U);
-			if (length <= 0) return;
-			i = 1; j = 0;
-			k = (MERS_N > length ? MERS_N : length);
-			for (; k != 0; k--)
-			{
-				mt[i] = (mt[i] ^ ((mt[i - 1] ^ (mt[i - 1] >> 30)) * 1664525U)) + seeds[j] + j;
-				i++; j++;
-				if (i >= MERS_N) { mt[0] = mt[MERS_N - 1]; i = 1; }
-				if (j >= length) j = 0;
-			}
-			for (k = MERS_N - 1; k != 0; k--)
-			{
-				mt[i] = (mt[i] ^ ((mt[i - 1] ^ (mt[i - 1] >> 30)) * 1566083941U)) - i;
-				if (++i >= MERS_N) { mt[0] = mt[MERS_N - 1]; i = 1; }
-			}
-			mt[0] = 0x80000000U; // MSB is 1; assuring non-zero initial array
-		}
-		public int IRandom(int min, int max)
-		{
-			// output random integer in the interval min <= x <= max
-			int r;
-			r = (int)((max - min + 1) * Random()) + min; // multiply interval with random and truncate
-			if (r > max)
-				r = max;
-			if (max < min)
-				return -2147483648;
-			return r;
-		}
-		public double Random()
-		{
-			// output random float number in the interval 0 <= x < 1
-			uint r = BRandom(); // get 32 random bits
-			if (BitConverter.IsLittleEndian)
-			{
-				byte[] i0 = BitConverter.GetBytes((r << 20));
-				byte[] i1 = BitConverter.GetBytes(((r >> 12) | 0x3FF00000));
-				byte[] bytes = { i0[0], i0[1], i0[2], i0[3], i1[0], i1[1], i1[2], i1[3] };
-				double f = BitConverter.ToDouble(bytes, 0);
-				return f - 1.0;
-			}
-			return r * (1.0/(0xFFFFFFFF + 1.0));
-		}
-		public uint BRandom()
-		{
-			// generate 32 random bits
-			uint y;
+        private MersenneTwister() { }
+        public MersenneTwister(uint seed)
+        {       // constructor
+            RandomInit(seed);
+        }
+        public void RandomInit(uint seed)
+        {
+            mt[0] = seed;
+            for (mti = 1; mti < MERS_N; mti++)
+                mt[mti] = (1812433253U * (mt[mti - 1] ^ (mt[mti - 1] >> 30)) + mti);
+        }
+        public void RandomInitByArray(uint[] seeds)
+        {
+            // seed by more than 32 bits
+            uint i, j;
+            int k;
+            int length = seeds.Length;
+            RandomInit(19650218U);
+            if (length <= 0) return;
+            i = 1; j = 0;
+            k = (MERS_N > length ? MERS_N : length);
+            for (; k != 0; k--)
+            {
+                mt[i] = (mt[i] ^ ((mt[i - 1] ^ (mt[i - 1] >> 30)) * 1664525U)) + seeds[j] + j;
+                i++; j++;
+                if (i >= MERS_N) { mt[0] = mt[MERS_N - 1]; i = 1; }
+                if (j >= length) j = 0;
+            }
+            for (k = MERS_N - 1; k != 0; k--)
+            {
+                mt[i] = (mt[i] ^ ((mt[i - 1] ^ (mt[i - 1] >> 30)) * 1566083941U)) - i;
+                if (++i >= MERS_N) { mt[0] = mt[MERS_N - 1]; i = 1; }
+            }
+            mt[0] = 0x80000000U; // MSB is 1; assuring non-zero initial array
+        }
+        public int IRandom(int min, int max)
+        {
+            // output random integer in the interval min <= x <= max
+            int r;
+            r = (int)((max - min + 1) * Random()) + min; // multiply interval with random and truncate
+            if (r > max)
+                r = max;
+            if (max < min)
+                return -2147483648;
+            return r;
+        }
+        public double Random()
+        {
+            // output random float number in the interval 0 <= x < 1
+            uint r = BRandom(); // get 32 random bits
+            if (BitConverter.IsLittleEndian)
+            {
+                byte[] i0 = BitConverter.GetBytes((r << 20));
+                byte[] i1 = BitConverter.GetBytes(((r >> 12) | 0x3FF00000));
+                byte[] bytes = { i0[0], i0[1], i0[2], i0[3], i1[0], i1[1], i1[2], i1[3] };
+                double f = BitConverter.ToDouble(bytes, 0);
+                return f - 1.0;
+            }
+            return r * (1.0 / (0xFFFFFFFF + 1.0));
+        }
+        public uint BRandom()
+        {
+            // generate 32 random bits
+            uint y;
 
-			if (mti >= MERS_N)
-			{
-				const uint LOWER_MASK = 2147483647;
-				const uint UPPER_MASK = 0x80000000;
-				uint[] mag01 = { 0, MERS_A };
+            if (mti >= MERS_N)
+            {
+                const uint LOWER_MASK = 2147483647;
+                const uint UPPER_MASK = 0x80000000;
+                uint[] mag01 = { 0, MERS_A };
 
-				int kk;
-				for (kk = 0; kk < MERS_N - MERS_M; kk++)
-				{
-					y = (mt[kk] & UPPER_MASK) | (mt[kk + 1] & LOWER_MASK);
-					mt[kk] = mt[kk + MERS_M] ^ (y >> 1) ^ mag01[y & 1];
-				}
+                int kk;
+                for (kk = 0; kk < MERS_N - MERS_M; kk++)
+                {
+                    y = (mt[kk] & UPPER_MASK) | (mt[kk + 1] & LOWER_MASK);
+                    mt[kk] = mt[kk + MERS_M] ^ (y >> 1) ^ mag01[y & 1];
+                }
 
-				for (; kk < MERS_N - 1; kk++)
-				{
-					y = (mt[kk] & UPPER_MASK) | (mt[kk + 1] & LOWER_MASK);
-					mt[kk] = mt[kk + (MERS_M - MERS_N)] ^ (y >> 1) ^ mag01[y & 1];
-				}
+                for (; kk < MERS_N - 1; kk++)
+                {
+                    y = (mt[kk] & UPPER_MASK) | (mt[kk + 1] & LOWER_MASK);
+                    mt[kk] = mt[kk + (MERS_M - MERS_N)] ^ (y >> 1) ^ mag01[y & 1];
+                }
 
-				y = (mt[MERS_N - 1] & UPPER_MASK) | (mt[0] & LOWER_MASK);
-				mt[MERS_N - 1] = mt[MERS_M - 1] ^ (y >> 1) ^ mag01[y & 1];
-				mti = 0;
-			}
+                y = (mt[MERS_N - 1] & UPPER_MASK) | (mt[0] & LOWER_MASK);
+                mt[MERS_N - 1] = mt[MERS_M - 1] ^ (y >> 1) ^ mag01[y & 1];
+                mti = 0;
+            }
 
-			y = mt[mti++];
+            y = mt[mti++];
 
-			// Tempering (May be omitted):
-			y ^= y >> MERS_U;
-			y ^= (y << MERS_S) & MERS_B;
-			y ^= (y << MERS_T) & MERS_C;
-			y ^= y >> MERS_L;
-			return y;
-		}
-	}
+            // Tempering (May be omitted):
+            y ^= y >> MERS_U;
+            y ^= (y << MERS_S) & MERS_B;
+            y ^= (y << MERS_T) & MERS_C;
+            y ^= y >> MERS_L;
+            return y;
+        }
+    } 
 
+    public class BtMersenneTwister
+    {
+        const int MERS_N = 624;
+        const int MERS_M = 397;
+        const int MERS_U = 11;
+        const int MERS_S = 7;
+        const int MERS_T = 15;
+        const int MERS_L = 18;
+        const uint MERS_A = 0x9908B0DF;
+        const uint MERS_B = 0x9D2C5680;
+        const uint MERS_C = 0xEFC60000;
 
-static class Program
+        ulong[] mt = new ulong[MERS_N];          // state vector
+        uint mti;                            // index into mt
+
+        public BtMersenneTwister() {
+            ulong[] init = new ulong[4];
+            init[0] = 0x123;
+            init[1] = 0x234;
+            init[2] = 0x345;
+            init[3] = 0x456;
+            this.RandomInitByArray(init);
+        }
+
+        public BtMersenneTwister(uint seed)
+        {       // constructor
+            RandomInit(seed);
+        }
+
+        public void RandomInit(ulong[] states)
+        {
+            mt = states;
+        }
+        
+        public void RandomInit(ulong seed)
+        {
+            mt[0] = seed;
+            for (mti = 1; mti < MERS_N; mti++)
+                mt[mti] = (1812433253U * (mt[mti - 1] ^ (mt[mti - 1] >> 30)) + mti);
+        }
+        public void RandomInitByArray(ulong[] seeds)
+        {
+            // seed by more than 32 bits
+            uint i, j;
+            int k;
+            int length = seeds.Length;
+            RandomInit(19650218U);
+            if (length <= 0) return;
+            i = 1; j = 0;
+            k = (MERS_N > length ? MERS_N : length);
+            for (; k != 0; k--)
+            {
+                mt[i] = (mt[i] ^ ((mt[i - 1] ^ (mt[i - 1] >> 30)) * 1664525U)) + seeds[j] + j;
+                i++; j++;
+                if (i >= MERS_N) { mt[0] = mt[MERS_N - 1]; i = 1; }
+                if (j >= length) j = 0;
+            }
+            for (k = MERS_N - 1; k != 0; k--)
+            {
+                mt[i] = (mt[i] ^ ((mt[i - 1] ^ (mt[i - 1] >> 30)) * 1566083941U)) - i;
+                if (++i >= MERS_N) { mt[0] = mt[MERS_N - 1]; i = 1; }
+            }
+            mt[0] = 0x80000000U; // MSB is 1; assuring non-zero initial array
+        }
+        public ulong BRandom()
+        {
+            // generate 32 random bits
+            ulong y;
+
+            if (mti >= MERS_N)
+            {
+                const uint LOWER_MASK = 2147483647;
+                const uint UPPER_MASK = 0x80000000;
+                uint[] mag01 = { 0, MERS_A };
+                if (mti == MERS_N + 1)
+                    this.RandomInit(5489UL);
+
+                int kk;
+                for (kk = 0; kk < MERS_N - MERS_M; kk++)
+                {
+                    y = (mt[kk] & UPPER_MASK) | (mt[kk + 1] & LOWER_MASK);
+                    mt[kk] = mt[kk + MERS_M] ^ (y >> 1) ^ mag01[y & 1];
+                }
+
+                for (; kk < MERS_N - 1; kk++)
+                {
+                    y = (mt[kk] & UPPER_MASK) | (mt[kk + 1] & LOWER_MASK);
+                    mt[kk] = mt[kk + (MERS_M - MERS_N)] ^ (y >> 1) ^ mag01[y & 1];
+                }
+
+                y = (mt[MERS_N - 1] & UPPER_MASK) | (mt[0] & LOWER_MASK);
+                mt[MERS_N - 1] = mt[MERS_M - 1] ^ (y >> 1) ^ mag01[y & 1];
+                mti = 0;
+            }
+
+            y = mt[mti++];
+
+            // Tempering (May be omitted):
+            y ^= y >> MERS_U;
+            y ^= (y << MERS_S) & MERS_B;
+            y ^= (y << MERS_T) & MERS_C;
+            y ^= y >> MERS_L;
+            return y;
+        }
+        public ulong untempering(ulong y)
+        {
+            y ^= (y >> 18);
+            y ^= (y << 15) & 0xefc60000UL;
+            y ^=
+                ((y << 7) & 0x9d2c5680UL) ^
+                ((y << 14) & 0x94284000UL) ^
+                ((y << 21) & 0x14200000UL) ^
+                ((y << 28) & 0x10000000UL);
+            y ^= (y >> 11) ^ (y >> 22);
+
+            return y;
+        }
+    }
+
+   
+    static class Program
     {
 
         static void Main(string[] args)
         {
-            
-            PRNG_LCG pRNG_LCG = new PRNG_LCG();
-            CasinoPlayer casinoPlayer = new CasinoPlayer(7920);
+
+            //PRNG_LCG pRNG_LCG = new PRNG_LCG();
+            CasinoPlayer casinoPlayer = new CasinoPlayer(183);
             casinoPlayer.CreateAcc();
             long seed = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
@@ -345,32 +511,33 @@ static class Program
             //int money = 0;
             //while(money <= 10000000)
             //{
-            //    money = casinoPlayer.MakeLuckyBet(pRNG_LCG.genNext());
+            //    money = casinoPlayer.MakeLuckyLCGBet(pRNG_LCG.genNext());
             //}
 
-            MersenneTwister mersenneTwister = new MersenneTwister((uint)seed);
-            long nextNum = (long)mersenneTwister.BRandom();
-            do
-            {
 
-                    int id = casinoPlayer.GetId();
-                    id++;
-                    casinoPlayer = new CasinoPlayer(id);
-                    casinoPlayer.CreateAcc();
-                    seed = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                    mersenneTwister = new MersenneTwister((uint)seed);
-                    nextNum = (long)mersenneTwister.BRandom();
+            //MersenneTwister mersenneTwister = new MersenneTwister((uint)seed);
+            //long nextNum = (long)mersenneTwister.BRandom();
+            //do
+            //{
 
-            }
-            while (casinoPlayer.GetRealNumber() != nextNum);
+            //    int id = casinoPlayer.GetId();
+            //    id++;
+            //    casinoPlayer = new CasinoPlayer(id);
+            //    casinoPlayer.CreateAcc();
+            //    seed = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            //    mersenneTwister = new MersenneTwister((uint)seed);
+            //    nextNum = (long)mersenneTwister.BRandom();
 
-            //easy money
+            //}
+            //while (casinoPlayer.GetRealNumberMt() != nextNum);
 
-            int money = 0;
-            while(money <= 1000000)
-            {
-                money = casinoPlayer.MakeLuckyMTBet(mersenneTwister.BRandom());
-            }
+            ////easy money
+
+            //int money = 0;
+            //while (money <= 1000000)
+            //{
+            //    money = casinoPlayer.MakeLuckyMTBet((long)mersenneTwister.BRandom());
+            //}
 
 
         }
