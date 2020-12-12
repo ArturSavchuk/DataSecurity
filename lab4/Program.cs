@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using System.Security.Cryptography;
+using Konscious.Security.Cryptography;
 using System.Threading.Tasks;
 
 namespace lab4
@@ -166,26 +167,64 @@ namespace lab4
             File.AppendAllText(path, pwdplusnonce);
 
         }
+
         protected byte[] CreateNonce()
         {
-            var buffer = new byte[16];
+            var nonce = new byte[16];
             RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
-            rng.GetBytes(buffer);
-            return buffer;
+            rng.GetBytes(nonce);
+            return nonce;
         }
 
     }
 
+    class Argon2
+    {
+        public string path = @"..\..\Argon2Hashes.csv";
+        public void HashAndRecordPasswords(List<string> passwords)
+        {
+
+            for (int i = 0; i < passwords.Count; i++)
+            {
+                string pwdplusnonce = String.Empty;
+                byte[] nonce = CreateNonce();
+                var argon2 = new Argon2id(Encoding.UTF8.GetBytes(passwords[i]));
+
+                argon2.Salt = nonce;
+                argon2.DegreeOfParallelism = 4; // four cores
+                argon2.Iterations = 4;
+                argon2.MemorySize = 1024; // 1 mb
+
+                byte[] b = argon2.GetBytes(16);
+                RecordHash(Convert.ToBase64String(b) + "|" + Convert.ToBase64String(nonce));
+            }
+        }
+        protected byte[] CreateNonce()
+        {
+            var nonce = new byte[16];
+            RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
+            rng.GetBytes(nonce);
+            return nonce;
+        }
+        public void RecordHash(string pwdplusnonce)
+        {
+            File.AppendAllText(path, pwdplusnonce);
+        }
+
+
+    }
 
     class Program
     {
         static void Main(string[] args)
         {
             PasswordGenerator passwordGenerator = new PasswordGenerator(10, 70, 5);
-            List<string> l = passwordGenerator.GeneratePasswords(100);
-            Md5 md5 = new Md5();
-            md5.HashAndRecordPasswords(l);
-
+            List<string> passwords = passwordGenerator.GeneratePasswords(10000);
+           // Md5 md5 = new Md5();
+           // md5.HashAndRecordPasswords(l);
+           //
+            Argon2 argon2 = new Argon2();
+            argon2.HashAndRecordPasswords(passwords);
             
             
         }
